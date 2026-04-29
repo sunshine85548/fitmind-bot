@@ -1,5 +1,6 @@
 from aiogram import Router
 from aiogram.types import Message
+from keyboards.reply import get_main_keyboard
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 import aiosqlite
@@ -33,7 +34,7 @@ async def cmd_start(message: Message, state: FSMContext):
             f" Довідка по командах: /help"
         )
 
-    await message.answer(welcome_text)
+    await message.answer(welcome_text, reply_markup=get_main_keyboard())
 
 
 @router.message(Command("help"))
@@ -50,4 +51,28 @@ async def cmd_help(message: Message):
         "/delete_goal [ID] — Видалити ціль\n\n"
         "/cancel — Скасувати поточну дію"
     )
-    await message.answer(help_text)
+    await message.answer(help_text, reply_markup=get_main_keyboard())
+
+@router.message(lambda message: message.text == "👤 Профіль")
+async def profile_button(message: Message):
+    await message.answer("Скористайся командою /profile", reply_markup=get_main_keyboard())
+
+
+@router.message(lambda message: message.text == "🎯 Цілі")
+async def goals_button(message: Message):
+    await message.answer("Скористайся командою /goals", reply_markup=get_main_keyboard())
+
+
+@router.message(lambda message: message.text == "📊 Статистика")
+async def stats_button(message: Message):
+    await message.answer("Розділ статистики скоро буде доступний.", reply_markup=get_main_keyboard())
+
+
+@router.message(lambda message: message.text == "🏋️ Тренування")
+async def training_button(message: Message):
+    await message.answer("Розділ тренувань скоро буде доступний.", reply_markup=get_main_keyboard())
+
+
+@router.message(lambda message: message.text == "❓ Допомога")
+async def help_button(message: Message):
+    await cmd_help(message)
