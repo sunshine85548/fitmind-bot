@@ -2,6 +2,7 @@ from aiogram import Router
 from aiogram.types import Message
 from keyboards.reply import get_main_keyboard
 from aiogram.filters import CommandStart, Command
+from handlers.user_profile import show_profile, show_goals
 from aiogram.fsm.context import FSMContext
 import aiosqlite
 from core.database import DB_NAME
@@ -55,22 +56,22 @@ async def cmd_help(message: Message):
 
 @router.message(lambda message: message.text == "👤 Профіль")
 async def profile_button(message: Message):
-    await message.answer("Скористайся командою /profile", reply_markup=get_main_keyboard())
+    await show_profile(message)
 
 
 @router.message(lambda message: message.text == "🎯 Цілі")
 async def goals_button(message: Message):
-    await message.answer("Скористайся командою /goals", reply_markup=get_main_keyboard())
+    await show_goals(message)
 
 
 @router.message(lambda message: message.text == "📊 Статистика")
 async def stats_button(message: Message):
-    await message.answer("Розділ статистики скоро буде доступний.", reply_markup=get_main_keyboard())
+    await message.answer("Використай /stats")
 
 
 @router.message(lambda message: message.text == "🏋️ Тренування")
 async def training_button(message: Message):
-    await message.answer("Розділ тренувань скоро буде доступний.", reply_markup=get_main_keyboard())
+    await message.answer("Використай /training")
 
 
 @router.message(lambda message: message.text == "❓ Допомога")

@@ -7,7 +7,8 @@ from core.config import BOT_TOKEN
 from handlers.stats import router as stats_router
 from core.database import create_db
 from handlers.user_profile import router
-from handlers.training import router as training_router as profile_router
+from handlers.training import router as training_router
+from handlers.user_profile import router as profile_router
 from handlers.common import router as common_router
 
 logging.basicConfig(level=logging.INFO)
