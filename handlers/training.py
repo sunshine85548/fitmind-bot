@@ -1,8 +1,8 @@
 from aiogram import Router
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 import aiosqlite
-import random
+from keyboards.inline import get_done_keyboard
 from core.database import DB_NAME
 
 router = Router()
@@ -25,26 +25,25 @@ async def training(message: Message):
     text = (
         f"🏋️ <b>Тренування</b>\n\n"
         f"Вправа: <b>{title}</b>\n"
-        f"{description}\n\n"
-        f"Після виконання напиши: /done {ex_id}"
+        f"{description}"
     )
 
-    await message.answer(text)
+    await message.answer(
+        text,
+        reply_markup=get_done_keyboard(ex_id)
+    )
 
 
-@router.message(Command("done"))
-async def done_training(message: Message):
-    try:
-        ex_id = int(message.text.split()[1])
-    except:
-        await message.answer("Формат: /done ID")
-        return
+@router.callback_query(lambda c: c.data.startswith("done_"))
+async def done_training(callback: CallbackQuery):
+    ex_id = int(callback.data.split("_")[1])
 
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute(
             "INSERT INTO activity_logs (user_id, exercise_id) VALUES (?, ?)",
-            (message.from_user.id, ex_id)
+            (callback.from_user.id, ex_id)
         )
         await db.commit()
 
-    await message.answer("✅ Тренування зафіксовано!")
+    await callback.message.answer("✅ Тренування зафіксовано!")
+    await callback.answer()
