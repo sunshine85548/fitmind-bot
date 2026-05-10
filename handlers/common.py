@@ -3,6 +3,8 @@ from aiogram.types import Message
 from keyboards.reply import get_main_keyboard
 from aiogram.filters import CommandStart, Command
 from handlers.user_profile import show_profile, show_goals
+from handlers.stats import show_stats
+from handlers.training import training
 from aiogram.fsm.context import FSMContext
 import aiosqlite
 from core.database import DB_NAME
@@ -66,13 +68,12 @@ async def goals_button(message: Message):
 
 @router.message(lambda message: message.text == "📊 Статистика")
 async def stats_button(message: Message):
-    await message.answer("Використай /stats")
+    await show_stats(message)
 
 
 @router.message(lambda message: message.text == "🏋️ Тренування")
 async def training_button(message: Message):
-    await message.answer("Використай /training")
-
+    await training(message)
 
 @router.message(lambda message: message.text == "❓ Допомога")
 async def help_button(message: Message):

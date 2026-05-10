@@ -23,3 +23,52 @@ def get_done_keyboard(exercise_id: int):
             ]
         ]
     )
+
+def get_level_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🟢 Новачок",
+                    callback_data="level_beginner"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔴 Досвідчений",
+                    callback_data="level_advanced"
+                )
+            ]
+        ]
+    )
+
+
+def get_workout_type_keyboard(level: str):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="💪 Push",
+                    callback_data=f"workout_{level}_push"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🏋️ Pull",
+                    callback_data=f"workout_{level}_pull"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🦵 Legs",
+                    callback_data=f"workout_{level}_legs"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔥 Full Body",
+                    callback_data=f"workout_{level}_fullbody"
+                )
+            ]
+        ]
+    )

@@ -33,31 +33,28 @@ async def cancel_handler(message: Message, state: FSMContext):
     await message.answer(" Дію скасовано. Повернуто до головного меню.")
 
 
-@router.message(Command("profile"))
-async def show_profile(message: Message):
-    async with aiosqlite.connect(DB_NAME) as db:
-        async with db.execute("SELECT weight, height, age, gender, goal, bmr FROM users WHERE user_id = ?",
-                              (message.from_user.id,)) as cursor:
-            user = await cursor.fetchone()
-
     if user:
         weight, height, age, gender, goal, bmr = user
-        bmi = calculate_bmi(weight, height)
-        text = (f" <b>Твій Профіль:</b>\n"
-                f"Стать: <b>{gender}</b>\n"
-                f"Вік: <b>{age}</b>\n"
-                f"Зріст: <b>{height} см</b>\n"
-                f"Вага: <b>{weight} кг</b>\n\n"
-                f" Ціль: <b>{goal}</b>\n"
-                f" ІМТ: <b>{bmi}</b>\n"
-                f" Норма калорій: <b>{bmr} ккал</b>\n\n"
-                f" Оновити дані: /update")
+
+        bmi = round(calculate_bmi(weight, height), 2)
+        bmr = round(bmr, 2)
+
+        text = (
+            f"🔥 <b>FitMind Profile</b>\n\n"
+
+            f"👤 Стать: <b>{gender}</b>\n"
+            f"🎂 Вік: <b>{age}</b>\n"
+            f"📏 Зріст: <b>{height} см</b>\n"
+            f"⚖️ Вага: <b>{weight} кг</b>\n\n"
+
+            f"🎯 Ціль: <b>{goal}</b>\n"
+            f"📊 ІМТ: <b>{bmi}</b>\n"
+            f"🔥 Добова норма калорій: <b>{bmr} ккал</b>\n\n"
+
+            f"⚙️ Оновити дані: /update"
+        )
+
         await message.answer(text)
-    else:
-        await message.answer("Профіль не знайдено. Введіть /update, щоб заповнити анкету.")
-
-
-
 
 
 @router.message(Command("update"))
