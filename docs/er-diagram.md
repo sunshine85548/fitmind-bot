@@ -1,84 +1,42 @@
-\# ER Diagram
-
-
+# ER Diagram
 
 ```mermaid
-
 erDiagram
 
+    users {
+        INTEGER user_id PK
+        TEXT username
+        REAL weight
+        REAL height
+        INTEGER age
+        TEXT gender
+        TEXT goal
+        REAL bmr
+    }
 
+    exercises {
+        INTEGER ex_id PK
+        TEXT title
+        TEXT category
+        TEXT description
+        TEXT local_path
+    }
 
-&#x20;   users {
+    activity_logs {
+        INTEGER log_id PK
+        INTEGER user_id FK
+        INTEGER exercise_id FK
+        DATETIME timestamp
+    }
 
-&#x20;       INTEGER user\_id PK
+    user_goals {
+        INTEGER goal_id PK
+        INTEGER user_id FK
+        TEXT title
+        BOOLEAN is_completed
+    }
 
-&#x20;       TEXT username
-
-&#x20;       REAL weight
-
-&#x20;       REAL height
-
-&#x20;       INTEGER age
-
-&#x20;       TEXT gender
-
-&#x20;       TEXT goal
-
-&#x20;       REAL bmr
-
-&#x20;   }
-
-
-
-&#x20;   exercises {
-
-&#x20;       INTEGER ex\_id PK
-
-&#x20;       TEXT title
-
-&#x20;       TEXT category
-
-&#x20;       TEXT description
-
-&#x20;       TEXT local\_path
-
-&#x20;   }
-
-
-
-&#x20;   activity\_logs {
-
-&#x20;       INTEGER log\_id PK
-
-&#x20;       INTEGER user\_id FK
-
-&#x20;       INTEGER exercise\_id FK
-
-&#x20;       DATETIME timestamp
-
-&#x20;   }
-
-
-
-&#x20;   user\_goals {
-
-&#x20;       INTEGER goal\_id PK
-
-&#x20;       INTEGER user\_id FK
-
-&#x20;       TEXT title
-
-&#x20;       BOOLEAN is\_completed
-
-&#x20;   }
-
-
-
-&#x20;   users ||--o{ activity\_logs : has
-
-&#x20;   exercises ||--o{ activity\_logs : contains
-
-&#x20;   users ||--o{ user\_goals : creates
-
+    users ||--o{ activity_logs : has
+    exercises ||--o{ activity_logs : contains
+    users ||--o{ user_goals : creates
 ```
-
