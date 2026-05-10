@@ -42,19 +42,29 @@ async def cmd_start(message: Message, state: FSMContext):
 
 @router.message(Command("help"))
 async def cmd_help(message: Message):
+
     help_text = (
-        "<b>Довідка по командах:</b>\n\n"
-        " <b>Профіль:</b>\n"
-        "/profile — Переглянути свій профіль\n"
-        "/update — Оновити або заповнити дані\n\n"
-        " <b>Цілі:</b>\n"
-        "/goals — Список твоїх цілей\n"
-        "/add_goal — Додати нову ціль\n"
-        "/complete_goal [ID] — Відмітити ціль як виконану\n"
-        "/delete_goal [ID] — Видалити ціль\n\n"
-        "/cancel — Скасувати поточну дію"
+        f"🤖 <b>FitMind Bot — Команди</b>\n\n"
+
+        f"👤 <b>Профіль</b>\n"
+        f"/profile — перегляд профілю\n"
+        f"/update — оновлення анкети\n\n"
+
+        f"🎯 <b>Цілі</b>\n"
+        f"/goals — список цілей\n"
+        f"/add_goal — додати ціль\n\n"
+
+        f"🏋️ <b>Тренування</b>\n"
+        f"/training — отримати тренування\n\n"
+
+        f"📊 <b>Статистика</b>\n"
+        f"/stats — статистика активності\n\n"
+
+        f"❌ <b>FSM</b>\n"
+        f"/cancel — скасувати поточну дію"
     )
-    await message.answer(help_text, reply_markup=get_main_keyboard())
+
+    await message.answer(help_text)
 
 @router.message(lambda message: message.text == "👤 Профіль")
 async def profile_button(message: Message):
