@@ -16,7 +16,7 @@ async def show_stats(message: Message):
         async with db.execute(
             """
             SELECT COUNT(*)
-            FROM activity_logs
+            FROM workout_logs
             WHERE user_id = ?
             AND datetime(timestamp) >= datetime('now', '-7 day')
             """,
@@ -28,7 +28,7 @@ async def show_stats(message: Message):
         async with db.execute(
             """
             SELECT COUNT(DISTINCT date(timestamp))
-            FROM activity_logs
+            FROM workout_logs
             WHERE user_id = ?
             AND datetime(timestamp) >= datetime('now', '-30 day')
             """,
@@ -40,7 +40,7 @@ async def show_stats(message: Message):
         async with db.execute(
             """
             SELECT COUNT(*)
-            FROM activity_logs
+            FROM workout_logs
             WHERE user_id = ?
             """,
             (message.from_user.id,)
@@ -54,10 +54,13 @@ async def show_stats(message: Message):
 
     if week_trainings >= 10:
         level = "🔥 Machine"
+
     elif week_trainings >= 5:
         level = "💪 Active"
+
     elif week_trainings >= 1:
         level = "🟢 Beginner"
+
     else:
         level = "⚪ Новачок"
 
@@ -70,5 +73,56 @@ async def show_stats(message: Message):
 
         f"⚡ Рівень активності: <b>{level}</b>"
     )
+
+    await message.answer(text)
+
+@router.message(Command("history"))
+async def workout_history(message: Message):
+
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        async with db.execute(
+            """
+            SELECT workout_type, difficulty, timestamp
+            FROM workout_logs
+            WHERE user_id = ?
+            ORDER BY timestamp DESC
+            LIMIT 10
+            """,
+            (message.from_user.id,)
+        ) as cursor:
+
+            workouts = await cursor.fetchall()
+
+    if not workouts:
+
+        await message.answer(
+            "📭 Історія тренувань порожня."
+        )
+
+        return
+
+    text = "📅 <b>Історія тренувань</b>\n\n"
+
+    for workout_type, difficulty, timestamp in workouts:
+
+        workout_emoji = {
+            "push": "💪",
+            "pull": "🏋️",
+            "legs": "🦵",
+            "fullbody": "🔥"
+        }.get(workout_type, "🏋️")
+
+        difficulty_text = {
+            "beginner": "Новачок",
+            "advanced": "Досвідчений"
+        }.get(difficulty, difficulty)
+
+        text += (
+            f"{workout_emoji} "
+            f"<b>{workout_type.title()}</b> | "
+            f"{difficulty_text}\n"
+            f"🕒 {timestamp[:16]} UTC\n\n"
+        )
 
     await message.answer(text)

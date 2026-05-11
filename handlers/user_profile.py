@@ -27,8 +27,12 @@ class EditSpecificState(StatesGroup):
 
 
 class AddGoalStates(StatesGroup):
+
     title = State()
 
+    target_value = State()
+
+    unit = State()
 
 @router.message(Command("cancel"), StateFilter("*"))
 async def cancel_handler(message: Message, state: FSMContext):
@@ -266,26 +270,71 @@ async def update_single_field_and_recalculate(
         )
 
         await db.commit()
+
 @router.message(Command("add_goal"))
 async def start_add_goal(message: Message, state: FSMContext):
 
     await state.set_state(AddGoalStates.title)
 
     await message.answer(
-        "Напишіть вашу нову фітнес-ціль:"
+        "🎯 Введіть назву цілі:"
     )
 
 
 @router.message(AddGoalStates.title)
-async def process_add_goal(message: Message, state: FSMContext):
+async def process_goal_title(message: Message, state: FSMContext):
 
-    goal_title = message.text
+    await state.update_data(
+        title=message.text
+    )
+
+    await state.set_state(AddGoalStates.target_value)
+
+    await message.answer(
+        "📈 Введіть цільове значення:"
+    )
+
+
+@router.message(
+    AddGoalStates.target_value,
+    F.text.regexp(r'^\d+(\.\d+)?$')
+)
+async def process_goal_target(message: Message, state: FSMContext):
+
+    await state.update_data(
+        target_value=float(message.text)
+    )
+
+    await state.set_state(AddGoalStates.unit)
+
+    await message.answer(
+        "📏 Введіть одиницю вимірювання (кг, км, днів):"
+    )
+
+
+@router.message(AddGoalStates.unit)
+async def process_goal_unit(message: Message, state: FSMContext):
+
+    data = await state.get_data()
+
+    title = data["title"]
+    target_value = data["target_value"]
+    unit = message.text
 
     async with aiosqlite.connect(DB_NAME) as db:
 
         await db.execute(
-            "INSERT INTO user_goals (user_id, title) VALUES (?, ?)",
-            (message.from_user.id, goal_title)
+            """
+            INSERT INTO user_goals
+            (user_id, title, target_value, unit)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                message.from_user.id,
+                title,
+                target_value,
+                unit
+            )
         )
 
         await db.commit()
@@ -293,7 +342,161 @@ async def process_add_goal(message: Message, state: FSMContext):
     await state.clear()
 
     await message.answer(
-        "✅ Ціль успішно додано!"
+        "✅ Ціль успішно створено!"
+    )
+
+@router.message(
+    ProfileStates.gender,
+    F.text.in_(["Чоловік", "Жінка"])
+)
+async def process_gender(message: Message, state: FSMContext):
+
+    await state.update_data(
+        gender=message.text
+    )
+
+    await state.set_state(ProfileStates.weight)
+
+    await message.answer(
+        "⚖️ Введіть вашу вагу (кг):"
+    )
+
+
+@router.message(
+    ProfileStates.weight,
+    F.text.regexp(r'^\d+(\.\d+)?$')
+)
+async def process_weight(message: Message, state: FSMContext):
+
+    weight = float(message.text)
+
+    if not (30 <= weight <= 300):
+
+        await message.answer(
+            "❌ Введіть реальну вагу."
+        )
+
+        return
+
+    await state.update_data(
+        weight=weight
+    )
+
+    await state.set_state(ProfileStates.height)
+
+    await message.answer(
+        "📏 Введіть ваш зріст (см):"
+    )
+
+
+@router.message(
+    ProfileStates.height,
+    F.text.regexp(r'^\d+(\.\d+)?$')
+)
+async def process_height(message: Message, state: FSMContext):
+
+    height = float(message.text)
+
+    if not (100 <= height <= 250):
+
+        await message.answer(
+            "❌ Введіть реальний зріст."
+        )
+
+        return
+
+    await state.update_data(
+        height=height
+    )
+
+    await state.set_state(ProfileStates.age)
+
+    await message.answer(
+        "🎂 Введіть ваш вік:"
+    )
+
+
+@router.message(
+    ProfileStates.age,
+    F.text.regexp(r'^\d+$')
+)
+async def process_age(message: Message, state: FSMContext):
+
+    age = int(message.text)
+
+    if not (10 <= age <= 120):
+
+        await message.answer(
+            "❌ Введіть реальний вік."
+        )
+
+        return
+
+    await state.update_data(
+        age=age
+    )
+
+    await state.set_state(ProfileStates.goal)
+
+    await message.answer(
+        "🎯 Ваша ціль?\n"
+        "(Схуднення / Маса / Підтримка)"
+    )
+
+
+@router.message(ProfileStates.goal)
+async def process_goal(message: Message, state: FSMContext):
+
+    data = await state.get_data()
+
+    gender = data["gender"]
+    weight = data["weight"]
+    height = data["height"]
+    age = data["age"]
+
+    goal = message.text
+
+    bmr = calculate_bmr(
+        weight,
+        height,
+        age,
+        gender
+    )
+
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO users
+            (user_id, username, weight, height,
+             age, gender, goal, bmr)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                message.from_user.id,
+                message.from_user.username,
+                weight,
+                height,
+                age,
+                gender,
+                goal,
+                bmr
+            )
+        )
+
+        await db.commit()
+
+    await state.clear()
+
+    bmi = round(
+        calculate_bmi(weight, height),
+        2
+    )
+
+    await message.answer(
+        f"✅ Профіль успішно створено!\n\n"
+        f"📊 BMI: {bmi}\n"
+        f"🔥 BMR: {round(bmr, 2)} ккал"
     )
 
 
@@ -303,26 +506,181 @@ async def show_goals(message: Message):
     async with aiosqlite.connect(DB_NAME) as db:
 
         async with db.execute(
-            "SELECT goal_id, title, is_completed FROM user_goals WHERE user_id = ?",
+            """
+            SELECT
+                goal_id,
+                title,
+                current_value,
+                target_value,
+                unit,
+                is_completed
+            FROM user_goals
+            WHERE user_id = ?
+            """,
             (message.from_user.id,)
         ) as cursor:
 
             goals = await cursor.fetchall()
 
     if not goals:
+
         await message.answer(
-            "У вас поки немає цілей."
+            "🎯 У вас поки немає цілей.\n\n"
+            "Створіть через /add_goal"
         )
+
         return
 
-    text = "🎯 <b>Ваші цілі:</b>\n\n"
+    text = "🎯 <b>Ваші цілі</b>\n\n"
 
     for goal in goals:
 
-        goal_id, title, is_completed = goal
+        (
+            goal_id,
+            title,
+            current_value,
+            target_value,
+            unit,
+            is_completed
+        ) = goal
 
-        status = "✅" if is_completed else "⏳"
+        progress = min(
+            round((current_value / target_value) * 100),
+            100
+        )
 
-        text += f"{status} {title} (ID: {goal_id})\n"
+        status = "✅" if is_completed else "📈"
+
+        text += (
+            f"{status} <b>{title}</b>\n"
+
+            f"{current_value} / "
+            f"{target_value} {unit}\n"
+
+            f"Прогрес: {progress}%\n"
+
+            f"ID: {goal_id}\n\n"
+        )
 
     await message.answer(text)
+
+@router.message(Command("update_goal"))
+async def update_goal_progress(message: Message):
+
+    parts = message.text.split()
+
+    if len(parts) != 3:
+
+        await message.answer(
+            "Формат:\n/update_goal ID значення"
+        )
+
+        return
+
+    try:
+
+        goal_id = int(parts[1])
+
+        new_value = float(parts[2])
+
+    except:
+
+        await message.answer(
+            "❌ Некоректні дані."
+        )
+
+        return
+
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        async with db.execute(
+            """
+            SELECT target_value
+            FROM user_goals
+            WHERE goal_id = ?
+            AND user_id = ?
+            """,
+            (
+                goal_id,
+                message.from_user.id
+            )
+        ) as cursor:
+
+            goal = await cursor.fetchone()
+
+        if not goal:
+
+            await message.answer(
+                "❌ Ціль не знайдено."
+            )
+
+            return
+
+        target_value = goal[0]
+
+        is_completed = int(new_value >= target_value)
+
+        await db.execute(
+            """
+            UPDATE user_goals
+            SET current_value = ?,
+                is_completed = ?
+            WHERE goal_id = ?
+            """,
+            (
+                new_value,
+                is_completed,
+                goal_id
+            )
+        )
+
+        await db.commit()
+
+    await message.answer(
+        "✅ Прогрес цілі оновлено!"
+    )
+
+@router.message(Command("delete_goal"))
+async def delete_goal(message: Message):
+
+    parts = message.text.split()
+
+    if len(parts) != 2:
+
+        await message.answer(
+            "Формат:\n/delete_goal ID"
+        )
+
+        return
+
+    try:
+
+        goal_id = int(parts[1])
+
+    except:
+
+        await message.answer(
+            "❌ Некоректний ID."
+        )
+
+        return
+
+    async with aiosqlite.connect(DB_NAME) as db:
+
+        await db.execute(
+            """
+            DELETE FROM user_goals
+            WHERE goal_id = ?
+            AND user_id = ?
+            """,
+            (
+                goal_id,
+                message.from_user.id
+            )
+        )
+
+        await db.commit()
+
+    await message.answer(
+        "🗑 Ціль видалено!"
+    )

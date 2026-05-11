@@ -5,6 +5,7 @@ DB_NAME = "fitmind.db"
 
 
 async def create_db():
+
     async with aiosqlite.connect(DB_NAME) as db:
 
         await db.execute("""
@@ -42,10 +43,23 @@ async def create_db():
         """)
 
         await db.execute("""
+            CREATE TABLE IF NOT EXISTS workout_logs (
+                log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                workout_type TEXT,
+                difficulty TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS user_goals (
                 goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 title TEXT,
+                current_value REAL DEFAULT 0,
+                target_value REAL,
+                unit TEXT,
                 is_completed BOOLEAN DEFAULT 0,
                 FOREIGN KEY (user_id) REFERENCES users (user_id)
             )
@@ -54,7 +68,11 @@ async def create_db():
         await db.execute("DELETE FROM exercises")
 
         await db.executemany(
-            "INSERT INTO exercises (title, category, description, local_path) VALUES (?, ?, ?, ?)",
+            """
+            INSERT INTO exercises
+            (title, category, description, local_path)
+            VALUES (?, ?, ?, ?)
+            """,
             [
                 ("Присідання", "Ноги", "3 підходи по 12 повторень", ""),
                 ("Віджимання", "Груди", "3 підходи по 15 повторень", ""),
@@ -65,4 +83,7 @@ async def create_db():
         )
 
         await db.commit()
-        logging.info("База даних та таблиці успішно створені.")
+
+        logging.info(
+            "База даних та таблиці успішно створені."
+        )

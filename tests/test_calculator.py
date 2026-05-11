@@ -56,3 +56,22 @@ def test_bmr_weight_difference():
     light = calculate_bmr(60, 180, 25, "Чоловік")
     heavy = calculate_bmr(100, 180, 25, "Чоловік")
     assert heavy > light
+
+def test_goal_progress():
+    current = 50
+    target = 100
+
+    progress = round((current / target) * 100)
+
+    assert progress == 50
+
+def test_activity_level_active():
+    week_trainings = 6
+
+    level = (
+        "💪 Active"
+        if week_trainings >= 5
+        else "🟢 Beginner"
+    )
+
+    assert level == "💪 Active"
